@@ -8,6 +8,7 @@ type Err struct {
 	E map[string]string `json:"errors"`
 }
 
+
 func (e Err) Error() string {
 	var combinedErr string
 	for _, value := range e.E {
