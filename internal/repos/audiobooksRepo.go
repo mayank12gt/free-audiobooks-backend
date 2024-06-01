@@ -38,6 +38,12 @@ type AudiobookDTO struct {
 	Translators   []Translator       `bson:"translators" json:"translators"`
 }
 
+type GenreDTO struct {
+	ID    primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	Name  string             `bson:"name" json:"name"`
+	IDStr string             `bson:"id" json:"id"`
+}
+
 type Audiobook struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	IDStr         string             `bson:"id" json:"id"`
@@ -122,7 +128,7 @@ func (m *AudiobooksRepo) List(search string, genres []string, language string, t
 	collection := m.DB.Collection("audiobooks")
 
 	filter := bson.D{}
-	options := options.Find().SetProjection(bson.D{{"sections", 0}, {"translators", 0}}).SetSkip((page - 1) * page_size).SetLimit(page_size) //.SetSort(bson.D{{"totaltimesecs", 1}})
+	options := options.Find().SetProjection(bson.D{{"sections", 0}, {"translators", 0}}).SetSkip((page - 1) * page_size).SetLimit(page_size)
 
 	if search != "" {
 		log.Print(search)
@@ -133,7 +139,7 @@ func (m *AudiobooksRepo) List(search string, genres []string, language string, t
 
 	if len(genres) != 0 {
 		log.Print(genres)
-		filter = append(filter, bson.E{Key: "genres.name", Value: bson.M{"$in": genres}})
+		filter = append(filter, bson.E{Key: "genres.id", Value: bson.M{"$in": genres}})
 	}
 
 	if language != "" {
@@ -159,6 +165,9 @@ func (m *AudiobooksRepo) List(search string, genres []string, language string, t
 	count, err := collection.CountDocuments(context.TODO(), filter)
 	if err != nil {
 		return nil, Metadata{}, Error.NewError().Set("server", "Internal Server Error")
+	}
+	if count == 0 {
+		return nil, Metadata{}, Error.NewError().Set("message", "No records found")
 	}
 
 	meta := calculateMetadata(int(count), int(page), int(page_size))
@@ -192,5 +201,37 @@ func (m *AudiobooksRepo) Get(id string) (*Audiobook, error) {
 	}
 
 	return &audiobook, nil
+
+}
+
+func (m *AudiobooksRepo) GetGenres(page, page_size int64) ([]*GenreDTO, Metadata, error) {
+
+	collection := m.DB.Collection("genres")
+	filter := bson.D{}
+
+	options := options.Find().SetSkip((page - 1) * page_size).SetLimit(page_size)
+
+	count, err := collection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return nil, Metadata{}, Error.NewError().Set("server", "Internal Server Error")
+	}
+	if count == 0 {
+		return nil, Metadata{}, Error.NewError().Set("message", "No records found")
+	}
+
+	meta := calculateMetadata(int(count), int(page), int(page_size))
+
+	cursor, err := collection.Find(context.TODO(), filter, options)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	defer cursor.Close(context.Background())
+
+	var genres []*GenreDTO
+	if err = cursor.All(context.TODO(), &genres); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	return genres, meta, nil
 
 }

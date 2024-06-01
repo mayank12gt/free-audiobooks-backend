@@ -85,6 +85,8 @@ func (app *app) registerHandlers(server *echo.Echo) {
 
 	server.GET("/audiobooks/:id", app.GetHandler())
 
+	server.GET("/genres", app.ListGenresHandler())
+
 }
 
 func openDB(dsn string) (*mongo.Database, error) {

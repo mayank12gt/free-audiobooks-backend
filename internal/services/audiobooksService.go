@@ -40,3 +40,17 @@ func (s *AudiobookService) List(query Query) ([]*repos.Audiobook, repos.Metadata
 func (s *AudiobookService) Get(id string) (*repos.Audiobook, error) {
 	return s.audiobookRepo.Get(id)
 }
+
+func (s *AudiobookService) GetGenres(page, page_size int) ([]*repos.GenreDTO, repos.Metadata, error) {
+	genres, meta, err := s.audiobookRepo.GetGenres(int64(page), int64(page_size))
+	if err != nil {
+		return nil, meta, err
+	}
+
+	return genres, meta, nil
+
+}
+
+func (s *AudiobookService) GetSimilarBooks(id string) (*repos.Audiobook, error) {
+	return nil, nil
+}

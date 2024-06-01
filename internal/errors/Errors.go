@@ -5,9 +5,9 @@ import (
 )
 
 type Err struct {
-	E map[string]string `json:"errors"`
+	status_code int               `json:"-"`
+	E           map[string]string `json:"errors"`
 }
-
 
 func (e Err) Error() string {
 	var combinedErr string
@@ -22,8 +22,16 @@ func (e *Err) Set(key string, err string) *Err {
 		e = NewError()
 	}
 	log.Print(e.Error())
-	e.E[key] = err
+	e.E[key] = e.E[key] + " " + err
 	log.Print(e.Error())
+	return e
+}
+
+func (e *Err) SetCode(code int) *Err {
+	if e == nil {
+		e = NewError()
+	}
+	e.status_code = code
 	return e
 }
 
